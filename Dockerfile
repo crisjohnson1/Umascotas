@@ -1,7 +1,7 @@
 # ===========================
 #  Etapa 1: Build del proyecto
 # ===========================
-FROM eclipse-temurin:17-jdk AS builder
+FROM eclipse-temurin:21-jdk AS builder
 
 WORKDIR /app
 COPY . .
@@ -25,7 +25,7 @@ RUN ./mvnw clean package -DskipTests
 # ===========================
 #  Etapa 2: Imagen final
 # ===========================
-FROM eclipse-temurin:17-jre
+FROM eclipse-temurin:21-jre
 
 WORKDIR /app
 
