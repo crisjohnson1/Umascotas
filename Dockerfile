@@ -1,33 +1,38 @@
 # ===========================
-#  Etapa 1: Build del proyecto
+#  Etapa 1: Build
 # ===========================
 FROM eclipse-temurin:21-jdk AS builder
 
 WORKDIR /app
 
-# Copiamos solo archivos necesarios primero (mejor cache)
+# Copiar archivos necesarios para descargar dependencias
+COPY pom.xml .
 COPY mvnw .
 COPY .mvn .mvn
-COPY pom.xml .
 
-# Descarga dependencias antes de copiar todo → cache efectivo
+# Dar permisos al wrapper de Maven
 RUN chmod +x mvnw
+
+# Descargar dependencias sin compilar
 RUN ./mvnw dependency:go-offline
 
-# Copiamos el resto del proyecto
+# Copiar el resto del proyecto
 COPY . .
 
-# Instalamos Node para compilar el frontend
-RUN apt-get update && apt-get install -y nodejs npm
+# Asegurar permisos del mvnw (IMPORTANTE porque COPY sobrescribe archivos)
+RUN chmod +x mvnw
 
-# Compilar frontend React/Vite si existe
+# Compilar frontend React (Vite)
 WORKDIR /app/src/main/resources/react
 RUN npm install
 RUN npm run build
 
-# Empaquetar Spring Boot
+# Volver al backend
 WORKDIR /app
+
+# Empaquetar Spring Boot
 RUN ./mvnw clean package -DskipTests
+
 
 # ===========================
 #  Etapa 2: Imagen final
@@ -36,8 +41,10 @@ FROM eclipse-temurin:21-jre
 
 WORKDIR /app
 
+# Copiar el jar generado en la etapa de build
 COPY --from=builder /app/target/*.jar app.jar
 
 EXPOSE 8080
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
+
