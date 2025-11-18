@@ -6,6 +6,9 @@ FROM eclipse-temurin:17-jdk AS builder
 WORKDIR /app
 COPY . .
 
+# Dar permisos al wrapper de Maven
+RUN chmod +x mvnw
+
 # Instalamos Node para compilar el frontend
 RUN apt-get update && apt-get install -y nodejs npm
 
@@ -31,3 +34,4 @@ COPY --from=builder /app/target/*.jar app.jar
 EXPOSE 8080
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
+
