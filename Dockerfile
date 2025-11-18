@@ -4,21 +4,28 @@
 FROM eclipse-temurin:21-jdk AS builder
 
 WORKDIR /app
-COPY . .
 
-# Dar permisos al wrapper de Maven y scripts
+# Copiamos solo archivos necesarios primero (mejor cache)
+COPY mvnw .
+COPY .mvn .mvn
+COPY pom.xml .
+
+# Descarga dependencias antes de copiar todo → cache efectivo
 RUN chmod +x mvnw
-RUN chmod +x build.sh || true
+RUN ./mvnw dependency:go-offline
+
+# Copiamos el resto del proyecto
+COPY . .
 
 # Instalamos Node para compilar el frontend
 RUN apt-get update && apt-get install -y nodejs npm
 
-# Compilar frontend React (Vite)
+# Compilar frontend React/Vite si existe
 WORKDIR /app/src/main/resources/react
 RUN npm install
 RUN npm run build
 
-# Regresar al backend y empaquetar Spring Boot
+# Empaquetar Spring Boot
 WORKDIR /app
 RUN ./mvnw clean package -DskipTests
 
